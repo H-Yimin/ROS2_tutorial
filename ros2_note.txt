@@ -1,0 +1,1118 @@
+///////////////////////////////////////////////////////////
+3. Create a python package
+cd ros2_ws/src/
+ros2 pkg create my_py_pkg --build-type ament_python --dependencies rclpy
+// ament is a build system, colcon is a build tool
+// dependencies are the one package gonna rely on
+// rclpy is the python library, so you can write python code to use ros2 features
+// Warnings may occur, because there is no licence file -> just ignore
+// After that a python package will be created under src/
+
+// To see what's inside the package, navigate to the src folder and use VSCode
+cd ros2_ws/src/
+code .
+// open vscode from the src folder
+
+// In ./my_py_pkg/ is where we will write the source code
+// package.xml most important
+// <depend> can be amended
+// setup.cfg and setup.py will be used when installing a node
+
+// We can build the package
+cd ..
+// go back to ros2_ws/
+// Important don't directly build in ./src/
+colcon build --packages-select my_py_pkg 
+// Use --packages-select to choose the one to be built
+// e.g. when there are 12 packages, just choose 1 of them
+// Now the python package is ready to hold a node
+
+/////////////////////////////////////////////////////
+4. Create a C++ Package
+cd ros2_ws/src/
+ros2 pkg create my_cpp_pkg --build-type ament_cmake --dependencies rclcpp
+cd ros2_ws/src/
+code .
+// Different structure to python package
+// CMakeLists.txt
+// similar package.xml
+// IF colcon build in ros2_ws/src
+// build, isntall and log folders will exist in ./src/ and is confusing
+// to solve the problem, use the following command
+rm -r build/ install/ log/
+cd ..
+// go back to ros2_ws/
+colcon build --packages-select my_cpp_pkg
+
+///////////////////////////////////////////////////////
+6. Write a Python Node - Minimal Code
+cd ros2_ws/src/my_py_pkg/my_py_pkg
+// Note two my_py_pkg in the directory
+touch my_first_node.py
+// Create a new python file
+cd ../..
+code .
+// Go back to src/ and open VSCode
+-------------------------------
+---Code refer to python file---
+-------------------------------
+// Remember to save the file
+// Back to terminal
+chmod +x my_first_node.py
+// Grant execute permission to the file
+// or use python3 my_first_node.py
+./my_first_node.py
+// Use Ctrl+C to exit
+
+// In real case we want to install the new file and run it in a executable
+// so that later it can be started from a launch file
+
+// Go to /ros2_ws/src/my_py_pkg/setup.py
+// Can be accessed in VSCode
+
+// add the line under console_scripts
+"py_node = my_py_pkg.my_first_node:main"
+// quotation mark necessary, no extention name for the python file
+// "<executable name> = <relative path to the package>.<python file name without py extention>:<name of the function we want to call>
+// To add more executable, add a column to the current line and start a new line
+// Save and go back to the terminal
+
+// Remember to build only in the ros2_ws/ folder
+cd
+cd ros2_ws/
+colcon build --packages-select my_py_pkg
+
+// The executable file py_node will be created in the ros2_ws/install/ folder
+// /home/yimin/ros2_ws/install/my_py_pkg/lib/my_py_pkg
+
+cd
+source ~/.bashrc
+// Since we just made some changes, we need to update the workspace (environment variable) in the terminal, or open a new terminal
+// We can either update it in the ros2_ws/install/setup.bash file
+// or directly in .bashrc
+
+ros2 run my_py_pkg py_node
+
+////////////////////////////////////////////////////
+7. Write a Python Node - with OOP
+// Basically we create a class for the Node of rclpy.node
+// And then all nodes we used in the code can inherit its functionality of the class
+// A callback function is created to make the output log more interesting
+
+// After saving the file always do build->source->run
+cd ros2_ws
+colcon build --packages-select my_py_pkg
+source install/setup.bash
+ros2 run my_py_pkg py_node
+
+/////////////////////////////////////////////////////
+8. Write a C++ Node-Minimal Code
+cd ros2_ws/src/my_cpp_pkg/src
+touch my_first_node.cpp
+cd ../..
+code .
+
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+
+//To make the cpp file execuable, we need to modify the CMakeList.txt
+//See the file for more details
+
+cd ros2_ws/
+colcon build --packages-select my_cpp_pkg
+source install/setup.bash
+cd 
+ros2 run my_cpp_pkg cpp_node
+
+// cpp file-> my_first_node
+// node name-> cpp_test
+// executable-> cpp_node
+
+//////////////////////////////////////////
+11. More about ROS2
+// rcl - ros2 client library
+// rclcpp, rclpy, rcljava ...
+
+//////////////////////////////////////////
+2. Introspect your nodes with ros2 cli
+// Split the terminator to 2x2
+
+// Always use auto completion (Tab)
+// To show possible options, 2 x Tab
+// e.g. ros2 run demo_nodes_cpp (then 2xTab)
+// It will show all possible executable names
+
+// If we want to check the usage of a command, add -h
+// e.g ros2 run -h
+// It will explain the usage
+
+// Some useful command
+ros2 node list
+// It will show all the nodes which are running
+ros2 node info /<node name>
+// It will show infos of the node
+// ! remember the name start with a "/" as is given by node list
+
+// Note that two nodes should not have the same name
+// Otherwise there will be conflict in the node list
+// To rename a node at runtime, refer to the next section
+
+////////////////////////////////////////////
+3. Rename a node at runtime
+// For example we need to start five temperature nodes, it can be confusing if all nodes have the same name
+// use the following command to rename each single node before it runs
+ros2 run <package name> <execuable name> --ros-args -r __node:=<new node name>
+// e.g. ros2 run my_py_pkg py_node --ros-args -r __node:=temperature_sensor1
+// And sensor2, sensor3,... for following nodes
+// where -r stands for --remap
+
+/////////////////////////////////////////////
+4. Colcon
+// In this lesson a new method to build a **python** package is introduced
+// With the --symbuild-install option we can build the package **without having to build and source it again**
+// Important: to use --symbuild-install, make sure the python files in this package are executable
+// Use the command "chmod +x" to make a file executable
+// e.g. chmod +x my_first_node.py
+colcon build --packages-select my_py_pkg --symbuild-install
+// By running ros2 run after this command, we are actually running the executable in the src/ folder not in the install/ folder
+ros2 run my_py_pkg py_node
+// After modifying the py file and save it, run this command again.
+// It will run perfectly.
+// It can be useful for some quick iteration
+// But it doesn't work for cpp
+// cpp will need to be compiled anyway.
+
+////////////////////////////////////////////////////
+5. rqt and rqt_graph
+// rqt is a powerful tool and GUI to interact lots of things in your ros2 application
+rqt
+// rqt_graph is in plugins-introspection-node graph
+// or simply type rqt_graph in cli
+rqt_graph
+// After starting 2 nodes
+// refresh the rqt graph
+// nodes are visible now
+// Choose graph type Nodes/Topics(all)
+// uncheck Dead sinks, Leaf topics and Debug to see more nodes
+
+//////////////////////////////////////////////////////////
+6. Discover Turtlesim
+// in one terminal
+ros2 run turtlesim turtlesim_node
+
+// in another terminal
+ros2 run turtlesim turtle_teleop_key
+// And then the turtle can be controlled with g|b|v|c|d|e|r|t (which indicates the direction to which the turtle should rotate)
+// as well as the arrow (up and down for translation and left and right for rotation)
+
+// in another terminal
+rqt_graph
+// In the graph we can see two nodes and the topics between them
+
+ros2 run turtlesim turtlesim_node --ros-args -r __node:=my_turtle
+
+////////////////////////////////////////////////////////
+3. Write a Python publisher
+cd ros2_ws/src/my_py_pkg/my_py_pkg
+touch robot_news_station.py
+chmod +x robot_news_station.py
+# make the python file executable
+code .
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+# Remember to modify the package.xml for dependencies
+# And setup.py for the exectable
+
+cd ros2_ws
+colcon build --packages-select my_py_pkg --symlink-install
+source .bashrc
+
+ros2 run my_py_pkg robot_news_station
+# Check for information of the node, in another terminal
+ros2 node info /robot_news_station
+# We will see the topic /robot_news
+# published from the interface example_iterfaces/msg/String
+
+# To be able to see the msg, we need a subscriber
+ros2 topic list
+ros2 topic echo /robot_news
+# We will see the msg coming every 0.5s
+
+//////////////////////////////////
+4. Write a Python Subscriber
+cd ros2_ws/src/my_py_pkg/my_py_pkg
+touch smartphone.py
+chmod +x smartphone.py
+# the __pycharm__ in the folder can be removed with:
+rm -r __pycharm__
+
+code .
+
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+cd ros2_ws
+colcon build --packages-select my_py_pkg --symlink-install
+cd
+source .bashrc
+
+ros2 run my_py_pkg robot_news_station
+ros2 run my_py_pkg smartphone
+
+//////////////////////////////////////////////////////////////
+5. Write a C++ Publisher
+cd ros2_ws/src/my_cpp_pkg/src
+touch robot_news_station.cpp
+# NO need to chmod +x make it executable
+
+cd ros2_ws/src
+code .
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+
+# Remember to modify the dependency in package.xml (<depend>)
+# and CmakeLists.txt(find_package, add_executable, install)
+
+cd ros2_ws
+colcon build --packages-select my_cpp_pkg
+source install/setup.bash
+# This line works in ros2_ws/ folder
+# because source .bashrc only works in general path
+
+ros2 run my_cpp_pkg robot_news_station
+ros2 topic echo /robot_news_station
+
+# Use the subscriber in python
+ros2 run my_py_pkg smartphone
+# which will also work!
+
+//////////////////////////////////////////
+6. Write a C++ Subscriber
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+# If we start both publisher from cpp and py, the subscriber will also receive message from both of them
+
+///////////////////////////////////////
+7. Introspect ROS2 Topics with command lines
+ros2 topic list
+
+ros2 topic info /xxxxxx
+# where we can see the type of interface, number of publishers and subscribers
+# even when there only runs a ros2 topic echo /xxxx for a topic
+# it will be counted as a subscriber
+
+# To see the frequency of a topic
+ros2 topic hz /xxxxx
+
+# To see the bandwidth of a topic 
+ros2 topic bw /xxxxx
+
+# To publish directly in the terminal
+ros2 topic pub -r 5 /robot_news example_interfaces/msg/String "{data: 'Hello from the terminal'}"
+# Here pub =  publish, -r = rate, 5 = 5 times per second, and pay attention to the quotation mark
+# Only possible when the data type is simple , e.g. String here, otherwise not possible from the terminal
+# It will also be counted as a publisher
+
+/////////////////////////////////
+8. Remap a topic at runtime
+ros2 run my_py_pkg robot_news_station --ros-args -r __node:=my_station -r robot_news:=abc
+# here we remap the node as well as the topic
+# "robot_news" was the original topic, we remapped it to "abc"
+# the renamed topic can be confirmed by
+# >ros2 topic list
+
+# If now a subscriber want to receive msg from the topic
+# its topic should also be modified
+ros2 run my_py_pkg smartphone --ros-args -r robot_news:=abc
+
+////////////////////////////////////
+9. Monitor topics with rqt and rqt_graph
+# remap the topic name and node name
+# in rqt_graph: change to node/topics(all) and uncheck dead sinks, leaf topics
+
+//////////////////////////////////////////////
+10. Experiment on topics with turtlesim
+# First start turtlesim_node and turtle_teleop_key
+ros2 run turtlesim turtlesim_node
+ros2 run turtlesim turtle_teleop_key
+rqt_graph
+
+# From the rqt graph we can see the topic /turtle1/cmd_vel is important
+# It decides the translation and rotation of the turtle
+# We can check the interface
+ros2 node list
+ros2 node info turtlesim
+# which returns that it is the subscriber of the topic /turtle1/cmd_vel
+# and has the interface geometry_msgs/msg/Twist
+ros2 interface show geometry_msgs/msg/Twist
+# returns:
+Vector3  linear
+	float64 x
+	float64 y
+	float64 z
+Vector3  angular
+	float64 x
+	float64 y
+	float64 z
+# The velocity is composed of a linear and an angular part
+# e.g. for back and forth translation, only linear x has the value
+# e.g. for rotation. only angular z has the value
+# to make the turtle **move in a circle** we can publish in the topic
+ros2 topic pub -r 2 /tutlesim/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 1.0}, angular: {z: 1.0}}"
+# The complete message should be
+>ros2 topic pub -r 2 /tutlesim/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 1.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 1.0}}"
+# But the 0 values dont need to be set
+
+////////////////////////////////////////////////
+12. Activity 02 - Solution 12
+*Task: Create some kind of data pipeline between multiple nodes using topics
+# We will write in python
+
+cd ros2_ws/src/my_py_pkg/my_py_pkg
+touch number_publisher.py
+chmod +x number_publisher.py
+
+# We will use int64 data type interface here
+ros2 interface show example_interfaces/msg/Int64
+> int64 data
+
+13. Activity 02 - Solution 22
+*Task: Create a subscriber which will add all the number received from the topic to a counter
+*Task: And then publish the counter on a new topic
+
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+# After compiling
+ros2 run my_py_pkg number_publisher
+ros2 run my_py_pkg number_counter
+# In the counter node it wont print anything, we need to echo the topic to see the value
+ros2 topic echo /number
+ros2 topic echo /number_count
+# Then we will see the adding value
+
+# Notice that when the publisher stops, the echo will also stop incrementing
+# When the counter stops and starts again, the value will start from 0 again
+# Use rqt_graph to see the full pipeline
+
+///////////////////////////////////////////////
+14. Extra: Replay topic data with bags
+# Basically we can record topics in a period of time and replay it as many times as we want
+# We have 2 topics here /number and /number_count
+ros2 run my_py_pkg number_publisher
+ros2 run my_py_pkg number_counter
+
+# Before recording, we first create a folder for the bags
+cd
+mkdir bags
+
+# Record to a bag
+cd bags
+ros2 bag record -o test1 /number_count
+# -o is for the bag name
+# Ctrl+C to stop recording
+ls
+# And you will see the bag in the folder
+ros2 bag info test1
+# We dont need to go into the folder to check the bag info
+# simply >ros2 bag info xxxx
+
+# TO replay the bag
+# In another terminal >ros2 topic echo /number_counter
+ros2 bag play test1
+# And we can see the bags replayed
+# It can be replayed while there are new messages coming to the topic
+
+# To record more topics
+ros2 bag record -o test2 /number_count /number
+# Or even more
+ros2 bag record -o test3 -a
+# -a means all topics
+
+/////////////////////////////////////////
+3. Write a Python Service Server
+*Task: Take two numbers as request and the sum as response
+# The interface we will use:
+ros2 interface show example_interfaces/srv/AddTwoInts
+# returns:
+int64 a
+int64 b
+---
+int64 sum
+# Before the three dashes are the requests, after it is the response
+
+touch add_two_ints_server.py
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+# after compiling
+ros2 run my_py_pkg add_two_ints_server
+ros2 node list
+ros2 node info /add_two_ints_server
+# We will see the server details from the terminal
+# TO test it
+ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 3, b: 7}"
+# We will get a response of 10
+# Only works for simple requests 
+
+/////////////////////////////////////////
+4. Write a Python Service Client- no OOP
+touch add_two_ints_client_no_oos.py
+# We will modify the code a lot from the template
+-------------------------------
+---Code refer to py file---
+-------------------------------
+# the minimal code
+# Then we compile the file and start the client
+colcon build --packages-select my_py_pkg add_two_ints_client_no_oop --symlink-install
+ros2 run my_py_pkg add_two_ints_client_no_oop
+# The terminal will keep displaying the warning message, until the server is up
+ros2 run my_py_pkg add_two_ints_server
+
+# Finish the code
+-------------------------------
+---Code refer to py file---
+-------------------------------
+# Now when we run the client
+# We will see the response
+
+/////////////////////////////////////////
+5. Write a PYthon Service Client - oop
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+/////////////////////////////////////////
+6. Write a C++ Service Server
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+# We can validate the server by running the python client
+ros2 run my_cpp_pkg add_two_ints_server
+ros2 run my_py_pkg add_two_ints_client_no_oop
+
+////////////////////////////////////////////
+7. Write a C++ Service Client - no OOP
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+# Only start the client, the warning message popped up
+# After starting the server, the client gets a reply and returns
+
+/////////////////////////////////
+8. Write a C++ Service Client - OOP
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+# We dont have access to the parameter request in the callback function
+# To show the request as in no oop case
+# two options:
+# 1. Capture the request in a lambda when calling async_send_request.
+# 2. Or store the request values in member variables before sending. 
+# (Option 2 has been proven to be not practical, because the request will be overwritten when multiple requests are sent to the server)
+
+///////////////////////////////////////
+9. Introspect Services with the ros2 CLI
+ros2 run my_cpp_pkg add_two_ints_server
+ros2 node list
+ros2 node info /add_two_ints
+
+ros2 service list 
+# where we see all running services
+# besides the /add_two_ints service, there are several other services which contain the name "parameter"
+# these will be introduced later. They are necessary for a node to get parameters
+
+ros2 service type /add_two_ints # will show the interface >example_interfaces/srv/AddTwoInts
+ros2 interface show example_interfaces/srv/AddTwoInts # will show the data type
+# These lines are useful when we dont know what a server would return
+
+# we can call the service from the terminal
+ros2 service call <service name> <interface> "{<name1: value, name2: value,...>}"
+e.g. ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 5, b: 3}"
+# If we dont put value for one of the parameters, it will be set to 0
+e.g. ros2 service call /add_two_ints example_interfaces/srv/AddTwoInts "{a: 5}"
+# will return 5+0=5
+
+# We can also call the service from the rqt
+rqt 
+# -> plugins -> services -> service caller
+# we can put different values for the parameters and "call"
+
+////////////////////////////////////////
+10. Remap a service at runtime
+ros2 run my_py_pkg add_two_ints_server --ros-args -r add_two_ints:=abc
+# If we rename the service on the server side, then for each client that we start we also need to rename the service
+ros2 run my_py_pkg add_two_ints_client_no_oop --ros-args -r add_two_ints:=abc
+
+////////////////////////////////////////////
+11. Experiment on Services with Turtlesim
+ros2 run turtlesim turtlesim_node
+ros2 run turtlesim turtle_teleop_key
+ros2 service list
+	/clear
+	/kill
+	/reset
+	/spawn
+	/teleop_turtle/describe_parameters
+	/teleop_turtle/get_parameter_types
+	/teleop_turtle/get_parameters
+	/teleop_turtle/get_type_description
+	/teleop_turtle/list_parameters
+	/teleop_turtle/set_parameters
+	/teleop_turtle/set_parameters_atomically
+	/turtle1/set_pen
+	/turtle1/teleport_absolute
+	/turtle1/teleport_relative
+	/turtlesim/describe_parameters
+	/turtlesim/get_parameter_types
+	/turtlesim/get_parameters
+	/turtlesim/get_type_description
+	/turtlesim/list_parameters
+	/turtlesim/set_parameters
+	/turtlesim/set_parameters_atomically
+# We will see a bunch of services, those start with /teleop_turtle/ are probably related to the node turtle_teleop_key
+# And those start with /teleop_turtle/ are probably related to the node turtlesim_node
+# Then we are left with seven services specific to the application
+# /clear, /kill, /reset, /spawn, /turtle1/set_pen, /turtle1/teleport_absolute, /turtle1/teleport_relative
+# In the following we will play around /clear, /kill, /reset, /spawn in the terminal
+# important is to know the service interface directory and its data type
+
+1)
+# /clear will clear the trace that the turtle leaves 
+ros2 service type /clear
+>	std_srvs/srv/Empty
+ros2 interface show std_srvs/srv/Empty
+>	--- 
+# which means no nothing in the request and response, so we don't need to provide parameter for it
+ros2 service run /clear std_srvs/srv/Empty
+# The terminal will come with an empty response, and delete the trace
+
+2)
+# /spawn will create a new turtle
+ros2 service type /spawn
+>	turtlesim/srv/Spawn
+ros2 interface show turtlesim/srv/Spawn
+>	float32 x
+	float32 y
+	float32 theta
+	string name # Optional.  A unique name will be created and returned if this is empty
+	---
+	string name
+# we need to give the initial x, y and theta as well as the name (in order to delete the turtle later)
+
+ros2 service call /spawn turtlesim/srv/Spawn "{x: 3.0, y: 3.0, name: 'new_turtle1'}"
+# We will then create a turtle at (3,3) with no rotation ( (5.544,5.544) is in the middle
+
+3)
+# /kill will delete a turtle by a given name
+ros2 service type /kill
+>	turtlesim/srv/Kill
+ros2 interface show turtlesim/srv/Kill
+>	string name
+	---
+# We only need to provide the name
+ros2 service call /kill turtlesim/srv/Kill "{name: 'new_turtle1'}"
+
+4)
+# /reset will reset the orientation and position of the inital turtle and kill all other spawns
+ros2 service type /reset
+>	std_srvs/srv/Empty
+ros2 service call /reset std_srvs/srv/Empty
+
+////////////////////////////////////////////////////////////
+13. Activity 03 - Solution
+*Task: Create a server in the number counter node to reset the counter
+
+# First determine the interface to use, here we use SetBool
+ros2 interface show example_interfaces/srv/SetBool
+>	bool data # e.g. for hardware enabling / disabling
+	---
+	bool success   # indicate successful run of triggered service
+	string message # informational, e.g. for error messages
+
+# Open number_counter.py
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+# After building
+ros2 run my_py_pkg number_publisher
+ros2 run my_py_pkg number_counter 
+ros2 topic echo /number_count
+
+# Reset the counter
+ros2 service call /reset_counter example_interfaces/srv/SetBool "{data: true}"
+
+# or not
+ros2 service call /reset_counter example_interfaces/srv/SetBool "{data: false}"
+
+# As we can see in this number_counter.py, there can be publisher, subscriber as well as server in one single node
+
+
+//////////////////////////////////////////////
+3. Create and Build your first custom msg
+# Create a separate folder(pkg) for all your custom interfaces
+cd ros2_ws/src
+ros2 create pkg my_robot_interfaces/
+cd my_robot_interfaces/
+
+rm -r include/ src/
+# we dont need them
+
+cd ..
+code .
+# We will add some lines to the CMakeList and package.xml
+# https://roboticsbackend.com/ros2-create-custom-message/
+
+cd my_robot_interfacs
+mkdir msg/
+touch HardwareStatus.msg
+# Use uppercase Camelcase and don't write e.g. HardwareStatusMsg.msg to avoid redundance
+
+# edit the .msg file in vscode
+# let's suppose that we want a message that contains information like temperature, whether the motor is running, and a string debug message
+float64 temperature  <- type and name, one at a time
+bool are_motors_ready <- separate with underscore
+string debug_message
+
+# go back to CMakeList.txt and add the interface
+"msg/HardwareStatus.msg"
+
+cd
+cd ros2_ws
+colcon build --packages-select my_robot_interfaces
+
+# we can check whether the interface has been built by
+ros2 interface show my_robot_interfaces/msg/HardwareStatus
+# if it returns
+>	float64 temperature
+	bool are_motors_ready
+	string debug_message
+# Then it succeeded
+
+/////////////////////////////////////////
+4. Use your custom msg in a python node
+*Task: Create a publisher that publishes the data which matches the interface we just created
+# We call it hardware status publisher
+
+# !!!ALWAYS REMEMBER TO SOURCE THE TERMINAL AND IF NECESSARY, REOPEN VSCODE!!!
+
+cd ros2_ws/src/my_py_pkg/my_py_pkg
+touch hardware_status_publisher.py
+chmod +x hardware_status_publisher.py
+
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+# After import the custom interface
+# remember to add the dependency in the package.xml file
+
+cd ros2_ws
+colcon build --packages-select my_py_pkg
+source install/setup.bash
+ros2 run my_py_pkg hw_status_publisher  # hw_status_publisher is the executable name we set in the setup.py
+
+# in another terminal
+ros2 topic list
+>	/hardware_status
+	...
+ros2 topic echo /hardware_status
+# Then the message in the py file will be returned.
+
+////////////////////////////////////////////////
+5. Use your custom msg in a c++ node
+# Note that different from what we have done in python
+# We have to include the paths of the interface in ros2_ws/src/.vscode/c_cpp_properties.json
+# We can find this path by looking for the include/ folder
+cd ros2_ws/install/my_robot_interfaces/include
+pwd # this will return the path
+>	/home/yimin/ros2_ws/install/my_robot_interfaces/include
+# We copy it into the json file
+
+# After Adding the include path for the interface in /.vscode/c_cpp_properties.json
+# We should include it in the cpp file
+# Originally we created the interface as "HardwareStatus", in cpp it is going to create underscores for the header whenever there are upper letters
+# #include "my_robot_interfaces/msg/hardware_status.hpp" 
+# Also add dependencies in package.xml and CMakeList.txt
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+
+///////////////////////////////////////////////////////
+6. Create and Build your first custom service
+cd ros2_ws/src/my_robot_interfaces/
+mk srv
+cd srv
+touch ComputeRectangleArea.srv # Use a verb, uppercase at first and between each word
+
+# Open the .srv and write
+float64 length
+float64 width
+---
+float64 area
+
+# AFter saving add the service to the cmakelist
+# and colcon build
+colcon build --packages-select my_robot_interfaces
+source install/setup.bash
+
+ros2 interface show my_robot_interfaces/
+# With twice TAB we can see possible choices, use the service
+ros2 interface show my_robot_interfaces/srv/ComputeRectangleArea
+# it will return the interface as we defined
+
+# TO include it in python write
+from my_robot_interfaces.srv import ComputeRectangleArea
+# TO include it in cpp write
+#include "my_robot_interfaces/srv/compute_rectangle_area.hpp" 
+
+///////////////////////////////////////////////////////////////
+7. Introspect interfaces with the ros2 command lines
+# 1. introspect a interface using an existing package that was already intalled in example interfaces
+ros2 interface show example_interfaces/msg/Int64
+
+# 2. list all interfaces
+ros2 interface list
+
+# 3. list all interfaces in a specific package
+ros2 interface package sensor_msg
+
+# 4. show a specific interface in the package
+ros2 interface show sensor_msg/msg/MagneticField
+
+# 5. show the interface of a topic
+e.g. ros2 run my_py_pkg hw_status_publisher
+ros2 node list
+>	/hardware_status_publisher
+ros2 node info /hardware_status_publisher
+>	...
+	/hardware_status: my_robot_interfaces/msg/HardwareStatus
+	...
+
+# Or
+ros2 topic list
+>	...
+	/hardware_status
+	...
+ros2 topic info /hardware_status
+>	Type: my_robot_interfaces/msg/HardwareStatus
+	Publisher count: 1
+	Subscription count: 0
+ros2 topic type /hardware_status
+>	my_robot_interfaces/msg/HardwareStatus
+
+# 6. show the interface of a service
+e.g. ros2 run my_py_pkg add_two_ints_server
+ros2 node list
+ros2 node info /add_two_ints_server
+>	...
+	/add_two_ints: example_interfaces/srv/AddTwoInts
+	...
+# or
+ros2 service list
+ros2 service type /add_two_ints
+>	example_interfaces/srv/AddTwoInts
+
+# To conclude, important is to make difference between the communication layer and the actual content that is sent over the topic or over the service
+
+////////////////////////////////////////////
+9. Activity 04 - Solution 13
+*Task1: Create a LED State node to publish the current state of the led panel to the topic "led_panel_state" with the custom msg interface LedStateArray
+*Task2: Create a service "set_led" to change the state of the led panel with the custom srv interface SetLed
+*Task3: battery mode: create a client, which will set the led state when the battery is in different state
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+ros2 run my_py_pkg led_panel
+ros2 topic echo /led_states
+ros2 service list
+
+ros2 service call /set_led  my_robot_interfaces/srv/SetLed "{led_number: 0, state: 1}"
+# Then the state of led_number[0] will be changed to 1
+# And a success resonse will be returned
+# the new state will be published immediatly
+
+# for the battery mode
+# We will simulate the battery state by changing it to EMPTY every 4 seconds, and to FULL 6 seconds after that
+ros2 run my_py_pkg battery
+# we can see the time difference by reading the timestamp xxx166.xxx, xxx170.xxx, xxx176.xxx, xxx180.xxx
+
+# Next we use the set_led service to set the led panel.
+# when the battery is low change state to [0,0,1]
+# when the battery is high change state to [0,0,0]
+ros2 run my_py_pkg led_panel
+ros2 run my_py_pkg battery
+ros2 topic echo /led_panel_state
+
+////////////////////////////////////////
+3. Using a parameters in your python nodes
+# Instead of hardcoding a value in the code,
+# by defining a parameter, it's easier to modify the value in the runtime
+# as well as starting multiple nodes by same code
+# but with different parameter values
+
+# We will take number_publisher.py as an example
+-------------------------------
+---Code refer to py file---
+-------------------------------
+# After building the package
+# We can run the node
+ros2 run my_py_pkg number_publisher
+ros2 param list		# show a list of parameters
+ros2 topic echo /number
+
+# If we want to set the value of the parameters manually
+ros2 run my_py_pkg number_publisher --ros-args -p number:=3 -p timer_period:=2.0
+# Note! Put -p before each parameter we want to set
+# but --ros-args only once
+
+/////////////////////////////////////////////
+4. Using Parameters in C++ Nodes
+# we use number_publisher.cpp as example
+-------------------------------
+---Code refer to cpp file---
+-------------------------------
+
+//////////////////////////////////////////////
+5. Experiment on parameters with turtlesim
+*Goal: Get to know more about parameters and command lines
+*interact with parameters even if we dont have access to the code
+ros2 run turtlesim turtlesim_node
+
+ros2 param list
+# Some of the parameters will exist for any node and we can ignore them
+>	qos_overrides./parameter_events.publisher.depth
+	qos_overrides./parameter_events.publisher.durability
+	qos_overrides./parameter_events.publisher.history
+	qos_overrides./parameter_events.publisher.reliability
+	start_type_description_service
+	use_sim_time
+
+# Other parameter values can be "get" and modified
+>	background_b
+	background_g
+	background_r
+	holonomic
+
+ros2 param get /turtlesim background_r
+ros2 param get /turtlesim background_g
+ros2 param get /turtlesim background_b
+# and the value will be returned
+# we can change the blue value by
+ros2 run turtlesim turtlesim_node --ros-args -p background_b:=0
+
+# And we can also use service list
+ros2 service list
+>	...
+	/turtlesim/list_parameters
+	...
+	
+ros2 service type /turtlesim/list_parameters
+> 	rcl_interfaces/srv/ListParameters
+
+ros2 interface show rcl_interfaces/srv/ListParameters
+# It will return the datatype of request and response
+# Basically it tells us that we can call the service with an empty request
+
+ros2 service call /turtlesim/list_parameters rcl_interfaces/srv/ListParameters
+# It will return a list of parameters, just like we did before with "ros2 param list" 
+# The command line is useful in terminal
+# while the service call is useful when we want to interact with the service in the code, e.g. from a client
+
+//////////////////////////////////////////////////////
+6. YAML Parameter Files
+# The YAML Parameter Files are files where we store parameter values of one or multiple nodes that we can load at runtime
+# IN this lesson we will just create a yaml_files/ folder in our home directory (or any directory)
+# IN the next chapter of launch files we will learn how to install the yaml file inside our workspace
+-------------------------------
+---Code refer to yaml file---
+-------------------------------
+ros2 run my_py_pkg number_publisher --ros-args --params-file ~/yaml_params/number_params.yaml 
+
+# Now we store parameters and parameter2, start node in both cpp and py with one of the parameters each
+ros2 run my_py_pkg number_publisher --ros-args -r __node:=number_publisher2 --params-file ~/yaml_params/number_params.yaml
+ros2 run my_cpp_pkg number_publisher --ros-args -r __node:=number_publisher1 --params-file ~/yaml_params/number_params.yaml
+
+////////////////////////////////////////////////
+8 Activity 05 solution 12
+*Task: Choose a different robot name when we start the node
+ros2 run my_py_pkg robot_news_station --ros-args -r __node:=station1 -p robot_name:="The Robot"
+ros2 run my_py_pkg robot_news_station --ros-args -r __node:=station2 -p robot_name:="Giskard"
+
+# The parameters will run in two seperate nodes, even though they have the same name
+ros2 param list
+>	/station1:
+	robot_name
+	start_type_description_service
+	use_sim_time
+	/station2:
+	robot_name	
+	start_type_description_service
+	use_sim_time
+
+/////////////////////////////////////////////
+9 Activity 05 solution 22
+# Similar to the previous task, parameterize the led_states in led_panel.py
+# Save the parameter in a yaml file
+ros2 run my_py_pkg led_panel --ros-args -p led_states:="[0, 0, 1]"  # <-- Remember to add quotes
+ros2 run my_py_pkg led_panel --ros-args -p led_states:="[0, 0, 0, 0, 7]" # Also possible, even when 7 is not in the range of a state. We may add a verification mechanism in the code to avoid this. And even when the default array only has three integers
+# but for [0.1, 2.3, 3] is not possible
+# not possible for [0, 0, 0, 0.1] as well
+# because the datatype has to be integer
+ros2 run my_py_pkg led_panel --ros-args --params-file ~/yaml_params/led_config.yaml 
+
+//////////////////////////////////////////////
+10. extra parameter callbacks
+*Basically it provides us with another option to set the parameters
+*It works when the node is started
+*We don't have to stop the node and set the parameters before start
+*Take number_publisher.py as example
+-------------------------------
+---Code refer to yaml file---
+-------------------------------
+ros2 run my_py_pkg number_publisher
+
+ros2 topic echo /number
+
+ros2 param set /number_publisher number 4
+ros2 param set /number_publisher timer_period 1.4
+
+/////////////////////////////////////////////////
+3. Create and Install a Launch File(XML)
+# We are going to create a dedicated package for all launch files as well as yaml config files
+# THis will make it easier for you to handle dependencies in your application
+# And it is also a common move
+
+cd ros2_ws/src
+ros2 pkg create my_robot_bringup
+# bringup is always the name for launch file packae
+
+cd my_robot_bringup
+rm -r include/ src/
+mkdir launch
+# then use vscode to open it
+
+# first several setups
+# edit CMakeList.txt
+-------------------------------
+---Code refer to CMakeList.txt---
+-------------------------------
+
+# secondly create a new xml file under launch/
+# here number_app.launch.xml
+-------------------------------
+---Code refer to number_app.launch.xml file---
+-------------------------------
+
+# Thirdly add lines for the depend in package.xml
+  <exec_depend>my_py_pkg</exec_depend>
+  <exec_depend>my_cpp_pkg</exec_depend>
+-------------------------------
+---Code refer to package.xml file---
+-------------------------------
+
+# Fourthly colcon build the package and launch 
+colcon build --packages-select my_robot_bringup
+ros2 launch my_robot_bringup number_app.launch.xml
+
+# After that we can check the node and topic infos as usual
+ros2 topic list
+ros2 topic info /number_counter
+
+ros2 node list
+rqt_graph
+...
+
+
+///////////////////////////////////////////////////
+4. Python Launch Files
+# There are basically 3 ways to write launch file: xml, yaml and python
+# where xml is simpler more favored, xml>python>yaml
+# in this lesson we will write a python launch file
+
+# In the same folder as xml file
+# First two steps are identical to previous lesson
+# modify CmakeList and package.xml
+# create a new number_app.launch.py under launch/
+
+-------------------------------
+---Code refer to launch.py file---
+-------------------------------
+
+# As we can see, the python launch file is much longer than the xml file
+# That's why xml is more suggested
+
+# We can also import python launch files to an xml launch file
+-------------------------------
+---Code refer to ..._from_python.launch.xml file---
+-------------------------------
+
+colcon build --packages-select my_robot_bringup
+
+ros2 launch my_robot_bringup number_app.launch.py
+ros2 launch my_robot_bringup number_app_from_python.launch.xml
+ros2 launch my_robot_bringup number_app.launch.xml
+
+# These three lines deliever the same result
+
+///////////////////////////////////////////////////////
+5. Remapping in a launch file
+# remapped the topic and renamed the node
+# details see py and xml file
+
+////////////////////////////////////////////////////////////
+6. Load parameters in a launch file
+# in this lesson we will learn how to set parameter values in a launch file
+
+# I. how to directly set the value in the xml launch file
+# add the lines <param name="number" value="4"/>
+        <param name="timer_period" value="2.0"/>
+
+# II. how to import a yaml config file into the xml launch file
+
+# 1. create a config folder under /my_robot_bringup
+# 2. create a number_app.yaml in that folder
+# 3. add the lines as we did in previous chapter for yaml config files 
+(remember if we remapped the node in the launch file, use the remapped name)
+(here we use "my_number_publisher" instead of "number_publisher")
+# 4. add "config" after "launch" in CMakeList
+# 5. add <param from="$(find-pkg-share my_robot_bringup)/config/number_app.yaml"/> in the xml file
+
+# and for python launch file, refer to the launch.py file directly
+
+////////////////////////////////////////////////////////////////
+7. Add namespaces to your nodes
+# e.g. if we have 3 robots and all run the same node and use the same topic
+# it can be confusing and the communication may conflict
+# to solve this we can use namespace to seperate them
+
+# I. add namespace in cli
+ros2 run my_cpp_pkg number_publisher --ros-args -r __ns:=/test
+ros2 node list
+>	/test/number_publisher
+ros2 topic list
+>	/parameter_events
+	/rosout
+	/test/number
+# As we can see, the namespace is added
+
+# II. Add namespace to the xml launch file
+# add "namespace="/abc"" to the xml file
+# NOTE!!! 
+# in remap line, if we use <remap from="/number" to="/my_number"/> with a slash before each topic
+# there will be a mismatch for the topic (check rqt_graph)
+# the /abc/number topic will not be mapped to /abc/my_number
+# as ros2 will look for exactly /number to be remapped, but we have a namespace/abc before it
+# only by using <remap from="number" to="my_number"/> without slash
+# the topic will be correctly remapped
+

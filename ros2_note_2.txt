@@ -1,0 +1,329 @@
+////////////////////////////////////////////////////////////
+02-002 Visualize a robot TFs in RViz2
+# install urdf tutorial package
+sudo apt install ros-jazzy-urdf-tutorial
+source /opt/ros/jazzy/setup.bash
+# or source .bashrc
+# MUltiple udf models will be installed
+cd /opt/ros/jazzy/share/urdf_tutorial/urdf
+
+# launch a urdf model
+ros2 launch urdf_tutorial display.launch.py model:=/opt/ros/jazzy/share/urdf_tutorial/urdf/08-macroed.urdf.xacro
+
+/////////////////////////////////////////////////////////////
+02-003 Relationship between TFs, TF Tree 
+# There are arrows between "frames"/joints
+# These shows how frames are placed relative to each other
+# And how they move relative to each other
+# while running the urdf in rviz
+ros2 topic list
+ros2 topic echo /tf
+# And we will get the timesatamp, frame-id and translation and rotation (under header)
+
+# We can visualize the TF tree
+sudo apt install ros-jazzy-tf2-tools
+source .bashrc
+
+# while running the urdf in rviz
+ros2 run tf2_tools view_frames
+# It will generate a pdf file which presents the TF tree
+
+///////////////////////////////////////////////////////////////
+02-004 What problems are we trying to solve with TF
+# Use TF tools to calculate transform
+# We will create URDF file and use existing ROS packages
+/////////////////////////////////////////////////////////////////
+03-001 Intro-What is URDF
+# Unified Robot Description Format: description of all elements in a robot
+
+//////////////////////////////////////////////////////////////
+03-002 Your First URDF file Create and Visulization
+cd
+touch my_robot.urdf
+code my_robot.urdf
+# by adding <?xml version="1.0"?>
+# the file will be recognized as xml file in vscode
+
+# link are the rigid parts of the robot
+# use "visual" to define the shape and size of the object
+
+ros2 launch urdf_tutorial display.launch.py model:=/home/yimin/ros2_ws/src/my_robot.urdf
+
+////////////////////////////////////////////////////////////////
+03-003 Material - Add some colors
+# define the color and use them in <material>
+
+/////////////////////////////////////////////////////////////////////
+03-004 Combine 2 links with a joint
+# After creating 2 links, create a joint and define the parent and child link to it
+# Also modify the orientation of the joint and the link to have a correct visual
+# In our example, a cylinder on a box and the joint should be on the bottom of the cylinder
+# The origin of the cylinder is the relative coordinate to the origin of the joint
+
+/////////////////////////////////////////////////////////////////////////////
+03-005 ANother exampe of the process to write the URDF right the first time
+# Here we created a another box and joint
+# The box should be on top of the cylinder
+# The orgin of the second_third joint is the relative coordinate to the base_second_joint
+# and the origin of the box is the relative coordinate to the origin of the second_third_joint
+
+//////////////////////////////////////////////////////////////////////////////
+03-006 Different types of joints in a URDF
+# Reference: https://wiki.ros.org/urdf/XML
+# Here we will modify the joint type and relevant its elements
+# joint type: 
+# 1. revolute(rotation with limits, with axis, lower, upper, effort, velocity)
+# 2. continuous(rotation without limits, with axis, without lower, upper, thus also without effort and velocity)
+# 3. prismatic(translation with limits, with axis, lower, upper, effort, velocity)
+
+///////////////////////////////////////////////////////////////////////
+03-007 Add a WHeel to the robot
+# Create a cylinder with a joint on the rear right, where the joint origin should be in the center of the wheel
+# and the wheel should not intersect with the base box
+# key: rpy of the link, xyz of the joint
+
+//////////////////////////////////////////////////////////////////
+03-008~009 Acitivity 01
+# Task: to complete a URDF for a robot
+# left and right wheels, caster wheel, base_footprint(global option - fixed frame - base_footprint)
+
+//////////////////////////////////////////////////////////////////////
+04-002 How the Robot State Publisher and URDF work together
+# Open the robot urdf with rviz
+ros2 launch urdf_tutorial display.launch.py model:=/home/yimin/ros2_ws/src/my_robot.urdf
+
+# Output a pdf for the tf tree
+ros2 run tf2_tools view_frames -o my_robot_frames
+
+# View the topics and nodes
+rqt_graph
+
+ros2 topic list
+# We will see 3 topics which also exist in the rqt_graph /robot_description, /joint_states and /tf
+# It can be seen that it is the /robot_state_publisher node which publishes tfs
+# so we dig deeper into it to see what is it publishing
+
+ros2 params list /robot_state_publisher  
+# where we get a parameter called robot_description
+ros2 params get /robot_state_publisher robot_description
+# we will get exactly the urdf file we wrote
+# And this is also what is published in the /robot_description topic
+
+# Besides the urdf, the /robot_State_publisher also takes in the data from the topic /joint_states (published by joint_state_publisher
+ros2 topic echo /joint_states
+# we will get the angle of the joints
+# with the position data from urdf and robotion angle from joint states
+# the /robot_state_publisher node can compute the tf
+# And pass it to the tf topic
+
+/joint_states --> /robot_state_publisher --> TF
+			^
+		      URDF or robot_description
+////////////////////////////////////////////////////////////
+04-003 Run the Robot State Publisher with URDF in the terminal
+ros2 run robot_state_publisher robot_state_publisher --ros-args -p robot_description:="$(xacro /home/yimin/ros2_ws/src/my_robot.urdf)"
+		^			^
+		pkg name		node name
+(# to install xacro)
+(sudo apt install ros-jazzy-xacro)
+# After it shows "robot initialized" the node is started
+ros2 node list
+# and we can see the node robot_state_publisher
+
+# we need the joint state as well
+ros2 run joint_state_publisher_gui joint_state_publisher_gui 
+(# to install joint state publisher gui)
+(sudo apt install ros-jazzy-joint-state-publisher-gui)
+
+# to visualize it
+ros2 run rviz2 rviz2
+
+# in RVIZ we will see nothing in the beginning
+# we need to add the robot model and TF
+# we need to set the fixed frame to base_footprint
+# we need to description topic in robot model to /robot_description
+#Then we will see the complete visualization
+rqt_graph
+
+# So in this lesson we learned to start the urdf without using the urdf tutorial file but simply in cli
+
+//////////////////////////////////////////////
+04-004 Create a Robot Description Packgage
+mkdir ros2_ws
+ls ros2_ws
+mkdir src
+sudo apt install ros-dev-tools
+colcon build
+source install/setup.bash
+gedit ~/.bashrc
+# Add a line in the end
+source ~/ros2_ws/install/setup.bash
+# ^ All steps above are initial setting for the folder
+
+# Then we should create a package for the launch file
+cd src
+ros2 pkg create my_robot_description 
+# "my_robot" can be replaced by the name of the robot
+# This is the common way of naming the package
+cd my_robot_description
+rm -rf include/ src/
+mkdir urdf
+
+# Move the my_robot.urdf to the folder (the path can vary, depending on the place the urdf file is created
+cd ..
+mv my_robot.urdf my_robot_description/urdf/
+
+cd
+cd ros2_ws/src
+code .
+
+# Modify the Cmakelist file to add urdf to the DIRECTORY and share folder to the DESTINATION
+# Save
+
+cd ros2_Ws
+colcon build
+
+# We can find the urdf file in ros2_ws/install/my_robot_description/share/my_robot_description/urdf/my_robot.urdf
+# We wont browse this path later, but it's good to know
+
+///////////////////////////////////////////////////////////////
+04-005 Write a Launch file to start th robot state publisher with urdf (XML)
+# in ROS1 xml is used
+# in ROS2 python is more popular as in documentation
+# but it's way more complicated to write launch files in python
+# good news is that we can include python in xml, as some function is limited in xml
+
+# Normally we have to create dedicated folder for each robot, as they have different dependencies
+# Here we will only have one
+# Create a new folder launch/
+# Create display.launch.xml
+# add "launch" to CMakelist
+-------------------------------
+---Code refer to xml file---
+-------------------------------
+
+colcon build --packages-select my_robot_description
+source install/setup.bash
+ros2 launch my_robot_description display.launch.xml
+# Modify the setting according to 04-003
+rqt_graph
+
+//////////////////////////////////////////////
+04-006 Python Launch File
+-------------------------------
+---Code refer to py file---
+-------------------------------
+
+////////////////////////////////////////////////
+04-007-008 Activity 02- Add Rviz config to the launch file
+# First save the config(add robotmodel, add TF, change fixed frame, change description topic)
+# Save it as urdf_config.rviz
+# Put it in the rviz/ folder
+mv urdf_config.rviz ros2_ws/src/my_robot_description/rviz/
+# add rviz in CMakeList
+
+# for xml file add args to the node
+# for py file add arguments to the node
+
+////////////////////////////////////////////////////////
+05-002 Make the URDF compatible with Xacro
+sudo apt install ros-jazzy-xacro
+# Rename the urdf to .urdf.xacro (important is to have xacro in the end, urdf is not necessary)
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+# Add xmlns:xacro="http://www.ros.org/wiki/xacro"
+# and change the name of the urdf in xml and py launch file
+
+////////////////////////////////////
+05-003 Create Vriables with xacro properties
+# Instead of hardcoding the value of a variable,
+# we can create a property in xacro
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+# And in Xacro we can use ${pi}
+
+////////////////////////////////////////////////////////
+05-004-005 Activity 03
+# Basically we defined the length, width, height, radius, etc of the object in our urdf as parameters
+
+//////////////////////////////////////////////////////////////////
+05-006 Create Functions with Xacro Macros
+# We can create macros as functions to compute the parameters automatically
+# In our case we created macros to define left and right wheel link
+# Here we used the parameter "prefix" to name the links differently
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+
+* Think twice before we use a macro. Because e.g. in our case we only have two links.
+* It's kinda in the middle of using a macro and not.
+* Sometimes "premature optimization is the root of all evil."
+
+////////////////////////////////////////////////////////////////////
+05-007 Include a Xacro File in another Xacro file
+# Basically the method should be used in most of the project
+# Because so far we put everything in one xacro file, which is also the main file
+# When the robot comes with more components (camera, etc.), the file would be too long
+# By splitting the main xacro file into several smaller files, the structure would be clearer.
+# Here we split the xacro into "common properties.xacro" and "mobile_base.xacro"
+# For each xacro file we need to have the header (but without the name, e.g "my robot" to distinguish it from the main file
+# Those splitted files will be then included in the main file
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+# After coding we need to colcon build --symlink-install it again, because symlink doesnt include new files created
+
+# One thing to notice is that the solution is not perfect
+# We will use the color properties in the "common_properties" in "mobile_base"
+# which means those two xacro always have to exist at the same time
+# "common_properties" may also be used in other xacro files
+# TO avoid including "common_properties" in each xacro file
+# we MUST include it at the beginning of the main xacro file
+# so that it can be used for all the following files
+
+////////////////////////////////////////
+05-008 The Xacro Command to generate the URDF
+# In /launch/display_launch.xml, there is a command "xacro"
+# It translates the xacro file to a urdf file
+# because urdf is the parameter that the node robot_state_publisher takes
+
+# it can be proved by 
+ros2 launch my_robot_description display.launch.xml
+ros2 param get /robot_state_publisher robot_description
+
+# it says in the first line that this file is autogeneraed from the xacro file
+# it is in urdf format
+# we can see that all parameters are hardcoded
+
+////////////////////////////////////////////
+05-009 Real Meshes-quick overview
+# So far we only used some basic object shapes
+# IN real cases the shape are usally more complicated
+# it should be made in CAD softwares
+
+# it will be demonstrated in this lesson how we can import those meshes(models) in our urdf/xacro files
+# we take the repo in github turtlebot3
+https://github.com/ROBOTIS-GIT/turtlebot3/tree/jazzy
+# In /turtle_description/urdf/ we have all the URDF files
+# we can see that we imported some .stl files as meshes
+# those .stl files are installed in /turtle_description/meshes
+
+# what we need to do to use real meshes:
+# 1. create a folder meshes under the description folder
+# 2. include the meshes in CMakeList
+# 3. import them in the urdf files
+# 4. change the scale (usually the model is too big) and the orientation (rpy) if necessary
+
+///////////////////////////////////////////////////////////
+06-001 Gazebo Intro
+# URDF vs Gazebo
+# URDF: Visualization, debug (not simulation)
+# Gazebo: Simulation (gravity, physics, as well as plugins to simulate hardware control of the robot)
+
+//////////////////////////////////////////////////////////////
+06-002 Run Gazebo
+# Install Gazebo
+sudo apt install ros-jazzy-ros-gz
+

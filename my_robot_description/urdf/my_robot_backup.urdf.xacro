@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<robot name="my_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:property name="base_length" value="0.6" />
+    <xacro:property name="base_width" value="0.4" />
+    <xacro:property name="base_height" value="0.2" />
+    <xacro:property name="wheel_radius" value="0.1" />
+    <xacro:property name="wheel_length" value="0.05" />
+
+    <material name="green">
+        <!-- rgba = red, green, blue, alpha(transparency) -->
+        <color rgba="0 0.5 0 1.0"/>
+    </material>
+
+    <material name="blue">
+        <!-- rgba = red, green, blue, alpha(transparency) -->
+        <color rgba="0 0 0.5 1.0"/>
+    </material>
+
+    <material name="gray">
+        <color rgba="0.5 0.5 0.5 1.0"/>
+    </material>
+
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <!-- shape, length, width, height (m) -->
+                <box size="${base_length} ${base_width} ${base_height}"/>   
+            </geometry>
+            <!-- offset of the object -->
+            <origin xyz="0 0 ${base_height / 2.0}" rpy="0 0 0"/>
+            <material name="blue"/>
+        </visual>
+    </link>
+
+    <!-- <link name="second_link">
+        <visual>
+            <geometry>
+                <cylinder radius="0.1" length="0.2"/>
+            </geometry>
+            <origin xyz="0 0 0.1" rpy="0 0 0"/>
+            <material name="gray"/>
+        </visual>
+    </link> -->
+
+    <!-- create a macro(function) which create the left and right wheel link
+    use "prefix" to name the link differently -->
+    <xacro:macro name="wheel_link" params="prefix">
+        <link name="${prefix}_wheel_link">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+                </geometry>
+                <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+                <material name="gray" />
+            </visual>
+        </link>
+    </xacro:macro>
+
+    <xacro:wheel_link prefix="right" />
+    <xacro:wheel_link prefix="left" />
+
+    <!-- <link name="right_wheel_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+            <material name="gray" />
+        </visual>
+    </link>
+
+    <link name="left_wheel_link">
+        <visual>
+            <geometry>
+                <cylinder radius="${wheel_radius}" length="${wheel_length}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="${pi / 2.0} 0 0" />
+            <material name="gray" />
+        </visual>
+    </link> -->
+
+    <link name="caster_wheel_link">
+        <visual>
+            <geometry>
+                <sphere radius="${wheel_radius / 2.0}" />
+            </geometry>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <material name="gray" />
+        </visual>
+    </link>
+
+    <link name="base_footprint">
+        
+    </link>
+
+    <!-- we need to define a joint to connect the two links
+    otherwise the urdf can not visualize them
+    common way to name a joint is to use the names of the two links it connects
+    e.g. base link(parent) and second link(child) -> base_second_joint
+    e.g. waist link and arm link -> waist_arm_joint -->
+
+    <!-- <joint name="base_second_joint" type="revolute">
+        <parent link="base_link"/>
+        <child link="second_link"/>
+        <origin xyz="0 0 0.2" rpy="0 0 0"/>
+        <axis xyz="0 0 1" />
+        <limit lower="-1.57" upper="1.57" effort="100" velocity="100" /> 
+    </joint> -->
+
+    <!-- <joint name="base_second_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="second_link"/>
+        <origin xyz="0 0 0.2" rpy="0 0 0"/>
+        <axis xyz="0 0 1" /> 
+    </joint> -->
+
+    <!-- <joint name="base_second_joint" type="prismatic">
+        <parent link="base_link"/>
+        <child link="second_link"/>
+        <origin xyz="0 0 0.2" rpy="0 0 0"/>
+        <axis xyz="1 0 0" />
+        <limit lower="0.0" upper="0.2" effort="100" velocity="100" /> 
+    </joint> -->
+
+    <joint name="base_right_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="right_wheel_link"/>
+        <origin xyz="${-base_length / 4.0} ${-base_width / 2.0 - wheel_length / 2.0} 0" rpy="0 0 0"/>
+        <axis xyz="0 1 0" /> 
+    </joint>
+
+    <joint name="base_left_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel_link"/>
+        <origin xyz="${-base_length / 4.0} ${base_width / 2.0 + wheel_length / 2.0} 0" rpy="0 0 0"/>
+        <axis xyz="0 1 0" /> 
+    </joint>
+
+    <joint name="base_caster_wheel_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="caster_wheel_link"/>
+        <origin xyz="${base_length / 3.0} 0 ${-wheel_radius / 2.0}" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="base_joint" type="fixed">
+        <parent link="base_footprint"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 ${wheel_radius / 2.0}" rpy="0 0 0"/>
+    </joint>
+</robot>
