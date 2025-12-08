@@ -15,4 +15,40 @@
         <color rgba="0.5 0.5 0.5 1.0"/>
     </material>
 
+    <xacro:macro name="box_inertia" params="m x y z o_xyz o_rpy">
+        <inertial>
+            <!-- Note! There is a "l" in "inertial" -->
+            <mass value="${m}"/>
+            <origin xyz="${o_xyz}" rpy="${o_rpy}"/>
+            <inertia 
+                ixx="${(1/12.0) * m * (y**2 + z**2)}" ixy="0.0" ixz="0.0" 
+                iyy="${(1/12.0) * m * (x**2 + z**2)}" iyz="0.0" 
+                izz="${(1/12.0) * m * (x**2 + y**2)}"/>
+            <!-- The parameters are kinda different in wikipedia, and it can be confusing to follow the naming condition in wiki.
+            Just remember the inertia of one axis is calculated by the value of the other two axes. -->
+        </inertial>
+    </xacro:macro>
+    
+    <xacro:macro name="cylinder_inertia" params="m r l o_xyz o_rpy">
+        <inertial>
+            <mass value="${m}"/>
+            <origin xyz="${o_xyz}" rpy="${o_rpy}"/>
+            <inertia 
+                ixx="${(1/12.0) * m * (3 * r**2 + l**2)}" ixy="0.0" ixz="0.0" 
+                iyy="${(1/12.0) * m * (3 * r**2 + l**2)}" iyz="0.0" 
+                izz="${(1/2.0) * m * r**2}"/>
+        </inertial>
+    </xacro:macro>
+
+    <xacro:macro name="sphere_inertia" params="m r o_xyz o_rpy">
+        <inertial>
+            <mass value="${m}"/>
+            <origin xyz="${o_xyz}" rpy="${o_rpy}"/>
+            <inertia 
+                ixx="${(2/5.0) * m * r**2}" ixy="0.0" ixz="0.0" 
+                iyy="${(2/5.0) * m * r**2}" iyz="0.0" 
+                izz="${(2/5.0) * m * r**2}"/>
+        </inertial>
+    </xacro:macro>
+
 </robot>

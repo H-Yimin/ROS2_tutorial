@@ -327,3 +327,38 @@ https://github.com/ROBOTIS-GIT/turtlebot3/tree/jazzy
 # Install Gazebo
 sudo apt install ros-jazzy-ros-gz
 
+////////////////////////////////////////////////////////////////////////
+06-003 How Gazebo works with ROS
+# It was introduced in this lesson how Gazebo and ros2 environment work together
+# The structure of ros2 env can refer to 04-002
+# There needs to be a ros2_gz_bridge between the two environments
+# And in Gazebo we will have multiple plugins.
+
+//////////////////////////////////////////////////////////////////////////////
+06-004 Add inertial tags in the URDF
+# Before we spawn the robot in Gazebo, we need to adapt the URDF model and add the inertial tags. Without those tags the model cannot exist in Gazebo.
+# Reference: https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+# Reference: https://docs.ros.org/en/humble/Tutorials/Intermediate/URDF/Adding-Physical-and-Collision-Properties-to-a-URDF-Model.html
+# 1. we create a macro for the box
+# Because all boxes share the same formel for moment of inertia
+# (In reality the models are not always of regular shapes. We can get the value from the CAD software where we import the mesh from)
+# The macro should be created in common_properties.xacro, as the inertia formel is common and can be used not only for this robot. The xacro will than be used
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+# 2. build the pkg and launch the Rviz
+ros2 launch my_robot_description display.launch.xml
+# 3. UNCHECK RobotModel/Visul Enabled and TF
+# Check RobotModel/MassProperties/Mass and Inertia
+# If the visual and inertia correspond to the same thing, then the adaption is validated.
+
+////////////////////////////////////////////////////////////////////////////////
+06-005~006 Acitivity 04 - Inertia Macros
+# In this activity we need to add the inertia for other components in our robot
+# cylinder mass: 1.0kg
+# sphere mass: 0.5kg
+
+/////////////////////////////////////////////////////////////
+06-007 Add Collision Tags in the URDF
+# Besides the visual and inertial, we also need to add collision tags in the URDF
+# In contrast to visual, where the mesh should be as detailed as possible, the collision shape should be as simple as possible (box, sphere, cylinder, etc.) to simplify the calculation.
