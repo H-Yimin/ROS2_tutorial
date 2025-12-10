@@ -361,4 +361,160 @@ ros2 launch my_robot_description display.launch.xml
 /////////////////////////////////////////////////////////////
 06-007 Add Collision Tags in the URDF
 # Besides the visual and inertial, we also need to add collision tags in the URDF
-# In contrast to visual, where the mesh should be as detailed as possible, the collision shape should be as simple as possible (box, sphere, cylinder, etc.) to simplify the calculation.
+# In contrast to visual, where the mesh should be as detailed as possible, the collision shape should be as simple as possible (preferred: box, sphere, cylinder, etc., or you can create another simplied mesh in CAD software and include it in the collision tag) to simplify the calculation.
+e.g.
+<collision>
+	<origin xyz="-0.064 0 0.0" rpy="0 0 0"/>
+	<geometry>
+		<mesh filename="package://turtlebot3_description/meshes/bases/waffle_base.stl" />
+	</geometry>
+</collision>
+# Refer to turtlebot3 repo for collision tag details
+-------------------------------
+---Code refer to xacro file---
+-------------------------------
+# By checking RobotModel/Collision enabled, we can see the collision shape
+
+//////////////////////////////////////////////////////////////
+06-008 Spawn the robot in Gazebo
+# IN this lesson 4 lines of command will be used (actually 3 + 1 for Rviz)
+# 1. (in urdf folder)
+ros2 run robot_state_publisher robot_state_publisher --ros-args -p robot_description:="$(xacro my_robot.urdf.xacro)"
+# 2. (here -r means to start the timer in gazebo as soon as it starts)
+ros2 launch ros_gz_sim gz_sim.launch.py gz_args:="empty.sdf -r" 
+# 3. (create a node)
+ros2 run ros_gz_sim create -topic robot_description
+# 4. (it's common that the wheels in rviz will disappear, reason is lack of plugins, will be solved in later sections)
+ros2 run rviz2 rviz2 -d ros2_ws/src/my_robot_description/rviz/urdf_config.rviz
+
+////////////////////////////////////////////////////////////////
+06-009~110 Activity 05 Launch file to start the robot in Gazebo
+1. Create a new package "my_robot_bringup"
+2. Create and install a "launch" folder
+# To create the package "my_robot_bringup" initally, refer to ros2_note.txt Line 997
+3. Add a new launch file "my_robot_gazebo.launch.xml"
+4. IN the launch file, start:
+	-robot state publisher node
+	-gazebo launch file
+	-create node
+	-Rviz2 with config
+-------------------------------
+---Code refer to xml file---
+-------------------------------
+
+# build the package and launch it
+ros2 launch my_robot_bringup my_robot_gazebo.launch.xml 
+
+//////////////////////////////////////////////////////////////////////////////
+06-011 Add Gazebo Plugins to control the robot
+# When we launched the robot in the last lesson, something was missing
+ros2 topic list
+ros2 topic echo /joint_states
+# nothing would be returned.
+# And there was also no topics like cmd_vel which usually send command to the robot
+# when we use rqt_graph we can see that nothing is publishing to the topic /joint_states
+# TO solve this we need to add plugins and add gazebo bridge.
+Reference: https://github.com/gazebosim/gz-sim/tree/gz-sim10
+# we will add 2 plugins in this lesson: DiffDrive and JointStatePublisher
+# we will not directly add gazebo tags in the mobile_base.xacro
+# instead we create a new mobile_base_gazebo.xacro
+# we should give the "filename" and the "name"
+# the plugin filename should be "gz-sim-<plugin name in the github with lower case and separated by dash>-system
+# e.g for DiffDrive => gz-sim-diff-drive-system
+# the name can be found at the end of the .cc file(here https://github.com/gazebosim/gz-sim/blob/gz-sim10/src/systems/diff_drive/DiffDrive.cc)
+# Then we also need to define several parameters according to the .hh file (left_joint, right_joint, wheel_separation, etc.)
+# frame_id(odon) and child_frame_id(base_footprint) basically related to the wheel velocity and tf between the two frames(location)
+
+# Then we add JointStatePublisher
+# so that the state can be returned back into ros2
+# we have a fake joint state publisher in our launch file (...gui) we wont use it any more
+# we will use later the gazebo one, which is going to simulate a hardware(wheel encoder in this case)
+# actually the states will be published only in gazebo, that's why we need a bridge later
+
+# One last thing, the caster wheel
+# The caster wheel is in our case a passive wheel/fixed joint. To make it move as smooth as possible and not to collide with the ground, we will add friction coefficience.
+
+///////////////////////////////////////////////////////////////////////////////////////
+06-012 Set up the Gazebo Bridge
+# For now gazebo and rviz2(ros2) still cannot communicate with each other
+# we will set up the bridge(special nodes as topics) between them
+
+# First we can have a overview of what topics exist in ros2 and gazebo, when we launch the robot (remember to colcon build)
+ros2 launch my_robot_bringup my_robot_gazebo.launch.xml
+ros2 topic list
+gz topic -l
+# we will bridge 5 topics to ros2 (clock, odometry, joint_state, tf, cmd_vel)
+
+# go to my_robot_gazebo.launch.xml
+# add the following node
+<node pkg="ros_gz_bridge" exec="parameter_bridge" >
+          <param name="config_file" value="" />>
+</node>
+# and include the executable in the package.xml
+# the config file should be in its folder my_robot_bringup/config
+# remember to add it to the INSTALL in Cmakelist
+# add the followiing line to the launch xml
+    <let name="gazebo_config_path"
+        value="$(find-pkg-share my_robot_bringup)/config/gazebo_bridge.yaml" />
+    ...
+
+# in the yaml file
+- ros_topic_name: from topic list or create a new one
+  gz_topic_name: from topic list or create a new one
+  ros_type_name:
+  gz_type_name:
+  direction: <GZ_TO_ROS> / <ROS_TO_GZ> / BIDRECTIONAL
+  
+# to see the topic type, here e.g. /clock
+gz topic -i -t /clock #-i for information, -t for topic
+# it returns
+>	gz.msgs.Clock
+# this will be the gazebo type
+# for the ros type : https://github.com/gazebosim/ros_gz/tree/ros2/ros_gz_bridge
+
+#NOTE:
+# 1 joint state also exist in ros2, but it is empty
+# we will pass the value in gazebo topic joint_state to ros2 with the bridge, so the topic name in ros needs to be exactly the same as it originally was
+
+# 2 as we mentioned before, the plugin diff_drive will create an extra link between oden and base_footprint, which does not exist in ros but only in gazebo, this link will be passed through the tf topic
+
+# 3 and the cmd_vel has not been mapped. we will map it with ros2, the command come from ros to gazebo
+
+/////////////////////////////////////////////////////////////////////////
+06-013 Final result and debugging
+colcon build --packages-select my_robot_bringup my_robot_description
+ros2 launch my_robot_bringup my_robot_gazebo.launch.xml
+# the robot will be spawned in gazebo
+# and a corresponding model exist in rviz
+
+# we can play around it
+rqt_graph
+ros2 run tf2_tools view_frames
+ros2 topic echo /joint_states # where we can see the response from the left and right joint
+
+# we can even publish command
+ros2 topic info /cmd_vel
+>	Type: geometry_msgs/msg/Twist
+ros2 interface show geometry_msgs/msg/Twist
+>	Vector3  linear
+		float64 x
+		float64 y
+		float64 z
+	Vector3  angular
+		float64 x
+		float64 y
+		float64 z
+ros2 topic pub -r 1 /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}, angular: {z: 0.5}}"
+# The robot will start moving , x means the robot can only move forwards and backwards, z means the rotation on z axis
+# TO stop the activity, we have to publish again with 0 for x and 0 for z
+
+# *teleoperation
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+# control the car with uio jkl m<> (remember to have the terminator in the front)
+
+
+
+
+
+
+
