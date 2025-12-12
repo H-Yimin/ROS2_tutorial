@@ -553,7 +553,11 @@ gz sim <name>
 # 3 Bridge the topics (refer to 06-012)
 # 4 Launch the ros again (validate that ROS also has camera topics now by "ros2 topic list"
 # 5 IN Rviz, click add-camera-topic:camera/image/raw
-(Somehow there's a blue occludor in front of the camera, maybe the camera has to be moved a bit forward?)
+(Somehow there's a blue occludor in front of the camera, probably the blue tf)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+07-004 Optional QUick fix for the camera to work with ROS
+# Actually with OpenCV, as the coordinate convention of OpenCV is different from RViz)
 
 
 
