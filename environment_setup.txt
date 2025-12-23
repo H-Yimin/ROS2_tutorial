@@ -20,7 +20,7 @@
 ### Follow all the steps until source /opt/ros/jazzy/setup.bash
 
 ## 6 Install other environment and tools
-### sudo apt terminator (With this tool we can open 2x2 terminal blocks by Ctrl+O and Ctrl+E)
+### sudo apt install terminator (With this tool we can open 2x2 terminal blocks by Ctrl+O and Ctrl+E)
 ### sudo apt install build-essentials gcc make perl dkms
 ### sudo apt install gedit
 ### **Install VSCode**
@@ -38,7 +38,7 @@
 ### Git normally comes with WSL2
 ### Can be checked by "git --version"
 ### Otherwise run "apt-get install git"
-### git config --global user.name "H-Yimin"
+### git config --global user.name "YiminHu26"
 ### git config --global user.email yimin.hu26@gmail.com
 
 ## 9 Create workspace and add the path to the setup.bash
@@ -52,6 +52,18 @@
 ### gedit .bashrc
 ### Add these two lines at the end of the .bashrc
 ### source /opt/ros/jazzy/setup.bash
+### source /usr/share/colcon_argcomplete/hook/colcon-argcomplete.bash
 ### source ~/ros2_ws/install/setup.bash
 
+--
+## Install Docker on WSL2
+### First uninstall previous docker desktop before installing WSL2
+### Secondly follow https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-containers and https://docs.docker.com/desktop/features/wsl/
+### optional: check wsl version by "wsl -v"
+### optional: check wsl mode by "wsl -l -v"
 
+--
+## Log in as a root
+### wsl -u root
+### #adduser user1
+### (password: 12345)

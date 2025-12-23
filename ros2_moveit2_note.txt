@@ -1,0 +1,92 @@
+02-003 Install Moveit2
+# Resource: https://moveit.ai/install-moveit2/binary/
+sudo apt install ros-$ROS_DISTRO-rmw-cyclonedds-cpp
+# Then add this line to .bashrc (before sourcing ros2)
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# Then run this line
+sudo apt install ros-jazzy-moveit
+
+///////////////////////////////////////////////////////////////
+03-001 Intro
+# In this section we will create URDF for a 6-axis robotic arm
+
+//////////////////////////////////////////////////////////////
+03-002 Create a description package
+cd ros2_ws/src
+ros2 pkg create my_robot_2_description
+cd my_robot_2_description
+rm -r include/ src/
+mkdir launch rviz urdf
+# In CMakeList.txt add:
+install (DIRECTORY launch rviz urdf
+  DESTINATION share/${PROJECT_NAME}
+)
+cd ros2_ws
+colcon build --packages-select my_robot_2_description
+
+//////////////////////////////////////////////////////////////////
+03-003 First link
+# Create a new urdf file arm.urdf
+# To avoid writing the whole launch file:
+sudo apt install ros-jazzy-urdf-tutorial
+source .bashrc
+ros2 launch urdf_tutorial display.launch.py model:=/home/yimin_wsl/ros2_ws/src/my_robot_2_description/urdf/arm.urdf
+
+/////////////////////////////////////////////////////////////////
+03-004 Second link and first joint
+# 1 Create the new link "shoulder_link"
+# 2 Create the joint "joint1"
+# 3 Set the joint origin
+# 4 Set the rotating axis
+# 5 Set the link origin
+
+/////////////////////////////////////////////////////////////////////
+03-005~006 Activity 01 
+# Follow the steps in the previous lesson and complete the rest of the setup
+
+/////////////////////////////////////////////////////////////////////////
+03-007 Improve the URDF with xacro
+# Create 2 new xacro files "common_properties.xacro" and "my_robot_2.urdf.xacro"
+# Rename "arm.urdf" to "arm.xacro"
+# In the header add " xmlns:xacro="http://www.ros.org/wiki/xacro""
+# Only for the top level xacro (my_robot_2.urdf.xacro) keep the robot name
+# Include the other two files in top level file
+ros2 launch urdf_tutorial display.launch.py model:=/home/yimin_wsl/ros2_ws/src/my_robot_2_description/urdf/my_robot_2.urdf.xacro
+
+///////////////////////////////////////////////////////////////////////////
+03-008 Create a Launch file to display the robot
+# So far we use the urdf_tutorial launch file
+# Now we will create our own launch file
+# 1 In launch/ create "display.launch.xml"
+# Code details see file
+# 2 colcon build and source
+# 3 launch the robot with this launch file
+ros2 launch my_robot_2_description display.launch.xml
+# At beginning we may see a lot of errors and no model
+# 4 Add RobotModel and TF, change the topic to robot_description, change the base to base_footprint
+# 5 Save the config as "urdf_config.rviz" under rviz/
+# 6 Modify the details in launch file
+# Code details see file
+# 7 colcon build and source again, launch success
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
