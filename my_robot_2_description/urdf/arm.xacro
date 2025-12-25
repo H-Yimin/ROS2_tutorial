@@ -112,9 +112,7 @@
         </collision>
     </link>
 
-    <link name="tool_link">
-        
-    </link>
+    <link name="tool_link" />
     
     <joint name="joint1" type="revolute">
         <parent link="base_link"/>

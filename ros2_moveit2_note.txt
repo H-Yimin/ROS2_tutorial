@@ -108,7 +108,28 @@ default: true
 - MotionPlanning/Scene Robot/Links/<one link>/Show Trail
 - Use Cartisian Path: like another constraint for the robot arm, motion may not be executed because of singularity
 
+/////////////////////////////////////////////////////////////////////////
+05-002~003 Create Gripper URDF and connect it to the arm
+# New:  <mimic joint="gripper_left_finger_joint" multiplier="1.0" offset="0.0" />
+# This is to make the two fingers move simultaneously
 
+# The gripper_base_link is to be mounted on the tool_link
+# To view the TF tree, we can run (while the rviz is still running)
+ros2 run tf2_tools view_frames
+/////////////////////////////////////////////////////////////////////////////
+05-004~005 Acitivity 03
+# In this activity we modified the moveit config after adding the gripper to the model
+# important is to
+# - update self-collision
+# - add to planning group "gripper"
+# - add gripper pose "open" "closed" "half_open"
+# - add end effector
+# - update ros2-controller and moveit-controller
+
+# As we have modified something in joint_limits and moveit_controllers, we had better save a copy of the files before generating new ones
+# But since they are not that much, we can do it again
+# see 04-006
+# This time in moveit_controllers we dont need to change anything
 
 
 
