@@ -172,6 +172,55 @@ ros2 launch my_robot_2_bringup my_robot_2.launch.xml
 # 7 Go back to launch file, change the directory for rviz config
 # 8 colcon build again , source again, and its done
 
+////////////////////////////////////////////////////////////////////////////
+07-002 Make the arm move with moveit
+# In this lesson we created a new package with a cpp file to control the robot arm in rviz to move
+
+ros2 pkg create my_robot_2_commander_cpp --build-type ament_cmake --dependencies rclcpp
+# Then in src/test_moveit.cpp start coding
+# Details see the file
+# Edit CMakeList and package correspondingly
+# colcon build
+# start rviz2
+ros2 launch my_robot_2_bringup my_robot_2.launch.xml
+ros2 run my_robot_2_commander_cpp test_moveit.cpp
+
+# Since the motion is controlled by the cpp file, it's not necessary to use the bringup/launch file where the controller has to be spawned
+# Instead, a description/display.launch would be enough
+# Therefore, we can modify the my_robot_2_bringup/launch/my_robot_2.launch.xml line 5 "rviz_config_path" to my_robot_2_description/rviz/urdf_config/rviz
+# And we can add another planning group "gripper" in the cpp file
+
+
+///////////////////////////////////////////////////////////////////////////////
+07-003 Joint and Pose Goal C++
+# Previously we gave the pre-defined pose with the name to cpp
+# in this lesson we will directly give the joint value and the pose value -> compute the position and orientation -> inverse kinematic -> execution
+# Notice: Not every value we give is reachable!!!
+
+/////////////////////////////////////////////////////////////////////////////////////
+07-004 Cartesian Path
+# In this lesson we learned how to plan cartesian motion
+# It is especially suitable for short distance movement
+# For long distance movement it may fail, as it may not be able to resolve the proper cartesian path
+# To solve the problem, we will need more axis of freedom.
+
+//////////////////////////////////////////////////////////////////////////////////////////
+07-006 Integrate the C++ API inside an OOP node
+# In this lesson we programmed a new cpp OOP node "commander" to use C++ API to control nodes(arm and gripper)
+# 4 Methods (3 for different method to plan and 1 for plan and execution)
+# Datails see cpp file
+# To test the node, 2 methods:
+# [1] As we did in test_moveit.cpp, we can have a node keep spinning and run different methods to see if it works
+# [2] Create a topic publisher and subcriber for e.g. NamedTarget or JointTarget
+
+
+
+
+
+
+
+
+
 
 
 
